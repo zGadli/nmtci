@@ -80,6 +80,10 @@ html {
     scroll-behavior: smooth;
 }
 
+@view-transition {
+    navigation: auto;
+}
+
 ::selection {
     background-color: var(--accent-color);
     color: var(--bg-color);
