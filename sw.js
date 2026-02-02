@@ -1,10 +1,14 @@
-const CACHE_NAME = "nmtci-cache-v18";
+const CACHE_NAME = "nmtci-cache-v19";
 const ASSETS = [
     "/nmtci/",
     "/nmtci/index.html",
     "/nmtci/assets/css/styles.css",
     "/nmtci/assets/js/index.js",
     "/nmtci/assets/js/chapter.js",
+    "/nmtci/assets/js/highlight.js",
+    "/nmtci/assets/css/highlights.css",
+    "/nmtci/assets/js/vendor/floating-ui/core.js",
+    "/nmtci/assets/js/vendor/floating-ui/dom.js",
     "/nmtci/offline.html",
     "/nmtci/assets/img/nmtci.jpg",
     "/nmtci/assets/icons/favicon-96x96.png",

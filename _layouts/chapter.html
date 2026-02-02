@@ -25,6 +25,7 @@
             rel="stylesheet" />
     </noscript>
     <link rel="stylesheet" href="{{ '/assets/css/styles.css' | relative_url }}" />
+    <link rel="stylesheet" href="{{ '/assets/css/highlights.css' | relative_url }}" />
     <style>
         body {
             touch-action: pan-y;
@@ -529,7 +530,7 @@
         </div>
     </div>
 
-    <div id="content">{{ content }}</div>
+    <div id="content">{{content}}</div>
 
     <div style="text-align: center">
         <a href="https://discord.gg/YWpdPycmWk" class="discord-btn" target="_blank" rel="noopener noreferrer">
@@ -669,6 +670,47 @@
         </button>
     </div>
 
+    <div id="highlight-toolbar" style="display: none;">
+        <div class="hl-group">
+            <button class="hl-btn-color hl-btn-yellow" data-color="yellow" title="Yellow"></button>
+            <button class="hl-btn-color hl-btn-green" data-color="green" title="Green"></button>
+            <button class="hl-btn-color hl-btn-blue" data-color="blue" title="Blue"></button>
+            <button class="hl-btn-color hl-btn-red" data-color="red" title="Red"></button>
+        </div>
+
+        <div class="hl-divider"></div>
+
+        <div class="hl-group">
+            <button class="hl-btn-icon hl-btn-note" title="Add Note">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                    stroke-linejoin="round">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                </svg>
+            </button>
+            <button class="hl-btn-icon hl-btn-delete" title="Remove Highlight">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                    stroke-linejoin="round">
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <div class="note-modal-overlay" id="noteOverlay">
+        <div class="note-modal">
+            <div class="modal-header">
+                <h3>Highlight Note</h3>
+            </div>
+            <textarea id="noteInput" placeholder="Add your thoughts here..."></textarea>
+            <div class="note-modal-actions">
+                <button class="ui-button btn-secondary" id="cancelNote">Cancel</button>
+                <button class="ui-button btn-primary" id="saveNote">Save Note</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         const PREV_CHAPTER_NUM = "{{ page.prev }}";
         const NEXT_CHAPTER_NUM = "{{ page.next }}";
@@ -693,7 +735,11 @@
             );
         }
     </script>
+    <script src="{{ '/assets/js/vendor/floating-ui/core.js' | relative_url }}"></script>
+    <script src="{{ '/assets/js/vendor/floating-ui/dom.js' | relative_url }}"></script>
     <script src="{{ '/assets/js/chapter.js' | relative_url }}"></script>
+    <script src="{{ '/assets/js/highlight.js' | relative_url }}"></script>
+    <script src="{{ '/assets/js/audio.js' | relative_url }}"></script>
     <script>
         if ("serviceWorker" in navigator) {
             window.addEventListener("load", () => {
