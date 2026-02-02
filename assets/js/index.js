@@ -29,6 +29,13 @@ const DOM = {
     sortLabel: document.getElementById("sortLabel"),
     firstChapterBtn: document.getElementById("firstChapterBtn"),
     latestChapterBtn: document.getElementById("latestChapterBtn"),
+
+    latestUpdatesPanel: document.getElementById("latestUpdatesPanel"),
+    latestList: document.getElementById("latestList"),
+
+    bookDescription: document.getElementById("bookDescription"),
+    toggleSynopsisBtn: document.getElementById("toggleSynopsisBtn"),
+
     installFab: document.getElementById("installFab"),
     installMenu: document.getElementById("installMenu"),
     installAction: document.getElementById("pwaInstallAction"),
@@ -140,6 +147,7 @@ const ContentManager = {
             this.chapters = await response.json();
             this.chapters.sort((a, b) => a.id - b.id);
 
+            this.renderLatest();
             this.updateNavButtons();
             this.initObserver();
             this.refreshDataSource();
@@ -251,6 +259,33 @@ const ContentManager = {
             this.observer.unobserve(this.sentinel);
         }
     },
+
+    renderLatest() {
+        if (!this.chapters || this.chapters.length === 0) {
+            DOM.latestUpdatesPanel.classList.add("hidden-empty");
+            return;
+        }
+
+        DOM.latestUpdatesPanel.classList.remove("hidden-empty");
+
+        const latestCount = 3;
+        const latestChapters = this.chapters.slice(-latestCount).reverse();
+
+        DOM.latestList.innerHTML = latestChapters
+            .map((ch, index) => {
+                const badge = index === 0 ? `<span class="new-badge">New</span>` : "";
+                return `
+                <a href="${ch.url}" class="latest-item">
+                    <div class="latest-meta">
+                        <span class="latest-chapter-num">Chapter ${ch.id}</span>
+                        <span class="latest-chapter-title">${ch.title}</span>
+                    </div>
+                    ${badge}
+                </a>
+            `;
+            })
+            .join("");
+    },
 };
 
 const PWAManager = {
@@ -301,10 +336,32 @@ const PWAManager = {
     },
 };
 
+const SynopsisManager = {
+    init() {
+        if (!DOM.bookDescription || !DOM.toggleSynopsisBtn) return;
+
+        DOM.bookDescription.classList.add("collapsed");
+
+        DOM.toggleSynopsisBtn.addEventListener("click", () => {
+            const isCollapsed = DOM.bookDescription.classList.contains("collapsed");
+
+            if (isCollapsed) {
+                DOM.bookDescription.classList.remove("collapsed");
+                DOM.toggleSynopsisBtn.textContent = "Show Less";
+            } else {
+                DOM.bookDescription.classList.add("collapsed");
+                DOM.toggleSynopsisBtn.textContent = "Show More";
+                DOM.bookDescription.scrollIntoView({ behavior: "smooth", block: "center" });
+            }
+        });
+    },
+};
+
 document.addEventListener("DOMContentLoaded", () => {
     ThemeManager.init();
     ResumeManager.init();
     ContentManager.init();
     ContentManager.bindEvents();
     PWAManager.init();
+    SynopsisManager.init();
 });
