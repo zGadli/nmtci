@@ -5,6 +5,7 @@ const HighlightManager = {
         activeId: null,
         storageKey: "",
         selectionTimer: null,
+        isPointerDown: false,
     },
 
     config: {
@@ -16,6 +17,13 @@ const HighlightManager = {
             toolbar: "#highlight-toolbar",
             noteOverlay: "#noteOverlay",
             overviewOverlay: "#overviewOverlay",
+            settingsMenu: "#settingsMenu",
+            noteInput: "#noteInput",
+            noteSaveBtn: "#saveNote",
+            noteCancelBtn: "#cancelNote",
+            overviewContent: "#overviewContent",
+            overviewCloseBtn: "#closeOverview",
+            overviewToggleBtn: "#toggleHighlightsList",
         },
     },
 
@@ -32,6 +40,7 @@ const HighlightManager = {
 
         this._restoreHighlightsFromStorage();
         this._bindAllEvents();
+        this._handleDeepLink();
     },
 
     _bindAllEvents() {
@@ -43,6 +52,10 @@ const HighlightManager = {
     },
 
     _bindSelectionEvents() {
+        document.addEventListener("pointerdown", () => {
+            this.state.isPointerDown = true;
+        });
+
         const handleDebouncedSelection = () => {
             if (
                 document
@@ -51,9 +64,15 @@ const HighlightManager = {
             )
                 return;
 
+            if (this.state.isPointerDown) {
+                this.state.toolbar.style.display = "none";
+            }
+
             if (this.state.selectionTimer) clearTimeout(this.state.selectionTimer);
 
             this.state.selectionTimer = setTimeout(() => {
+                if (this.state.isPointerDown) return;
+
                 const selection = document.getSelection();
                 this._handleSelectionChange({
                     target: selection.anchorNode?.parentElement,
@@ -64,6 +83,8 @@ const HighlightManager = {
         document.addEventListener("selectionchange", handleDebouncedSelection);
 
         document.addEventListener("pointerup", (e) => {
+            this.state.isPointerDown = false;
+
             const isToolbar = e.target.closest(this.config.selectors.toolbar);
             const isModal = e.target.closest(this.config.selectors.noteOverlay);
 
@@ -80,9 +101,9 @@ const HighlightManager = {
             const btn = e.target.closest("button");
             if (!btn) return;
 
-            if (btn.classList.contains("hl-btn-delete")) {
+            if (btn.classList.contains("delete-btn")) {
                 this.removeHighlight(this.state.activeId);
-            } else if (btn.classList.contains("hl-btn-note")) {
+            } else if (btn.classList.contains("note-btn")) {
                 this.ui.openNoteModal(this);
             } else if (btn.dataset.color) {
                 this.createHighlight(btn.dataset.color);
@@ -102,37 +123,97 @@ const HighlightManager = {
         });
     },
 
-    _bindModalEvents() {
-        const overlay = document.querySelector(this.config.selectors.noteOverlay);
+    _bindOverlayClose(overlaySelector, closeBtnSelector, onCloseCallback) {
+        const overlay = document.querySelector(overlaySelector);
+        const closeBtn = document.querySelector(closeBtnSelector);
+
         if (!overlay) return;
 
-        const cancelBtn = document.getElementById("cancelNote");
-        const saveBtn = document.getElementById("saveNote");
+        const closeHandler = () => onCloseCallback();
 
-        if (cancelBtn) cancelBtn.onclick = () => this.ui.closeNoteModal(this);
-        if (saveBtn) saveBtn.onclick = () => this._saveNoteFromModal();
+        if (closeBtn) closeBtn.addEventListener("click", closeHandler);
 
         overlay.addEventListener("click", (e) => {
-            if (e.target === overlay) this.ui.closeNoteModal(this);
+            if (e.target === overlay) closeHandler();
         });
     },
 
-    _bindOverviewEvents() {
-        const openBtn = document.getElementById("toggleHighlightsList");
-        const closeBtn = document.getElementById("closeOverview");
-        const overlay = document.querySelector(this.config.selectors.overviewOverlay);
+    _bindModalEvents() {
+        this._bindOverlayClose(
+            this.config.selectors.noteOverlay,
+            this.config.selectors.noteCancelBtn,
+            () => this.ui.closeNoteModal(this),
+        );
 
+        const saveBtn = document.querySelector(this.config.selectors.noteSaveBtn);
+        if (saveBtn) saveBtn.onclick = () => this._saveNoteFromModal();
+
+        const noteInput = document.querySelector(this.config.selectors.noteInput);
+        if (noteInput) {
+            noteInput.addEventListener("keydown", (e) => {
+                if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+                    e.preventDefault();
+                    this._saveNoteFromModal();
+                }
+            });
+        }
+    },
+
+    _bindOverviewEvents() {
+        this._bindOverlayClose(
+            this.config.selectors.overviewOverlay,
+            this.config.selectors.overviewCloseBtn,
+            () => this.ui.closeOverviewModal(this),
+        );
+
+        const openBtn = document.querySelector(this.config.selectors.overviewToggleBtn);
         if (openBtn) {
             openBtn.addEventListener("click", () => {
-                document.getElementById("settingsMenu")?.classList.remove("active");
+                document
+                    .querySelector(this.config.selectors.settingsMenu)
+                    ?.classList.remove("active");
                 this.ui.openOverviewModal(this);
             });
         }
 
-        if (closeBtn) closeBtn.onclick = () => this.ui.closeOverviewModal();
-        if (overlay) {
-            overlay.addEventListener("click", (e) => {
-                if (e.target === overlay) this.ui.closeOverviewModal();
+        const overviewContent = document.querySelector(this.config.selectors.overviewContent);
+        if (overviewContent) {
+            overviewContent.addEventListener("click", (e) => {
+                const btn = e.target.closest(".icon-btn.copy-btn");
+                if (btn) {
+                    const item = btn.closest(".hl-item");
+                    const quoteEl = item.querySelector(".hl-quote");
+                    let text = quoteEl.textContent.trim();
+
+                    if (navigator.clipboard) {
+                        navigator.clipboard
+                            .writeText(text)
+                            .then(() => {
+                                btn.classList.add("copied");
+                                setTimeout(() => btn.classList.remove("copied"), 2000);
+                            })
+                            .catch(console.error);
+                    }
+                    return;
+                }
+
+                const deleteBtn = e.target.closest(".icon-btn.delete-btn");
+                if (deleteBtn) {
+                    if (!confirm("Are you sure you want to delete this highlight?")) return;
+
+                    const id = deleteBtn.dataset.id;
+                    const key = deleteBtn.dataset.key;
+
+                    if (key === this.state.storageKey) {
+                        this.removeHighlight(id);
+                    } else {
+                        this.storage.delete(key, id);
+                    }
+
+                    const allData = this.storage.getAllGlobal(this.config.storagePrefix);
+                    const content = document.querySelector(this.config.selectors.overviewContent);
+                    this.ui.renderGlobalHighlights(content, allData, this.config.storagePrefix);
+                }
             });
         }
     },
@@ -157,7 +238,7 @@ const HighlightManager = {
     removeHighlight(id) {
         if (!id) return;
 
-        const span = document.querySelector(`.highlight[data-id="${id}"]`);
+        const span = this.dom.getHighlightElement(id);
         if (span) {
             const parent = span.parentNode;
             while (span.firstChild) parent.insertBefore(span.firstChild, span);
@@ -172,7 +253,7 @@ const HighlightManager = {
     },
 
     _updateHighlightColor(color) {
-        const span = document.querySelector(`span.highlight[data-id="${this.state.activeId}"]`);
+        const span = this.dom.getHighlightElement(this.state.activeId);
         if (span) {
             span.classList.forEach((cls) => {
                 if (cls.startsWith("highlight-") && cls !== "highlight") {
@@ -240,7 +321,8 @@ const HighlightManager = {
     },
 
     _saveNoteFromModal() {
-        const text = document.getElementById("noteInput").value;
+        const input = document.querySelector(this.config.selectors.noteInput);
+        const text = input ? input.value : "";
 
         if (!this.state.activeId && this.state.activeRange) {
             this.state.activeId = this.createHighlight("yellow");
@@ -249,7 +331,7 @@ const HighlightManager = {
         if (this.state.activeId) {
             this.storage.update(this.state.storageKey, this.state.activeId, { note: text });
 
-            const span = document.querySelector(`.highlight[data-id="${this.state.activeId}"]`);
+            const span = this.dom.getHighlightElement(this.state.activeId);
             if (span) {
                 if (text.trim()) span.classList.add("has-note");
                 else span.classList.remove("has-note");
@@ -316,7 +398,26 @@ const HighlightManager = {
         });
     },
 
+    _handleDeepLink() {
+        const hash = window.location.hash;
+        if (!hash) return;
+
+        const id = hash.slice(1);
+
+        const element = this.dom.getHighlightElement(id);
+
+        if (element) {
+            setTimeout(() => {
+                element.scrollIntoView({ behavior: "smooth", block: "center" });
+            }, 100);
+        }
+    },
+
     dom: {
+        getHighlightElement(id) {
+            return document.querySelector(`.highlight[data-id="${id}"]`);
+        },
+
         getSelectionContext(range, pSelector) {
             const container = range.commonAncestorContainer;
             const node =
@@ -436,7 +537,7 @@ const HighlightManager = {
 
         openNoteModal(manager) {
             const modal = document.querySelector(manager.config.selectors.noteOverlay);
-            const input = document.getElementById("noteInput");
+            const input = document.querySelector(manager.config.selectors.noteInput);
             let currentNote = "";
 
             if (manager.state.activeId) {
@@ -459,10 +560,10 @@ const HighlightManager = {
 
         openOverviewModal(manager) {
             const overlay = document.querySelector(manager.config.selectors.overviewOverlay);
-            const content = document.getElementById("overviewContent");
+            const content = document.querySelector(manager.config.selectors.overviewContent);
 
             const allData = manager.storage.getAllGlobal(manager.config.storagePrefix);
-            this.renderGlobalHighlights(content, allData);
+            this.renderGlobalHighlights(content, allData, manager.config.storagePrefix);
 
             overlay.classList.add("active");
         },
@@ -471,7 +572,7 @@ const HighlightManager = {
             document.getElementById("overviewOverlay").classList.remove("active");
         },
 
-        renderGlobalHighlights(container, data) {
+        renderGlobalHighlights(container, data, storagePrefix) {
             if (data.length === 0) {
                 container.innerHTML = `<div class="overview-empty">No highlights found yet. Start reading!</div>`;
                 return;
@@ -483,11 +584,24 @@ const HighlightManager = {
                         ? `Ch. ${chapter.chapterNum}: ${chapter.title}`
                         : chapter.title;
 
+                    const storageKey = `${storagePrefix}${chapter.path}`;
+
                     const highlightsHtml = chapter.highlights
                         .map(
                             (hl) => `
                     <div class="hl-item">
-                        <div class="hl-quote ${hl.color}">"${hl.text}"</div>
+                        <div class="hl-top-row">
+                            <a href="${chapter.path}#${hl.id}" class="hl-quote ${hl.color} hl-link">
+                                ${hl.text}
+                            </a>
+                            <button class="icon-btn copy-btn" title="Copy highlight">
+                                <svg class="icon-copy" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                                <svg class="icon-check" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            </button>
+                            <button class="icon-btn delete-btn" data-key="${storageKey}" data-id="${hl.id}" title="Delete highlight">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                            </button>
+                        </div>
                         ${hl.note ? `<div class="hl-user-note">${hl.note}</div>` : ""}
                     </div>
                 `,
@@ -511,6 +625,18 @@ const HighlightManager = {
     },
 
     storage: {
+        _write(key, callback) {
+            try {
+                const list = this.get(key);
+                const newList = callback(list);
+                if (newList) {
+                    localStorage.setItem(key, JSON.stringify(newList));
+                }
+            } catch (e) {
+                console.error("Storage write failed", e);
+            }
+        },
+
         get(key) {
             try {
                 return JSON.parse(localStorage.getItem(key) || "[]");
@@ -524,24 +650,24 @@ const HighlightManager = {
         },
 
         save(key, item) {
-            const list = this.get(key);
-            list.push(item);
-            localStorage.setItem(key, JSON.stringify(list));
+            this._write(key, (list) => {
+                list.push(item);
+                return list;
+            });
         },
 
         delete(key, id) {
-            let list = this.get(key);
-            list = list.filter((i) => i.id !== id);
-            localStorage.setItem(key, JSON.stringify(list));
+            this._write(key, (list) => list.filter((i) => i.id !== id));
         },
 
         update(key, id, changes) {
-            let list = this.get(key);
-            const idx = list.findIndex((i) => i.id === id);
-            if (idx !== -1) {
-                list[idx] = { ...list[idx], ...changes };
-                localStorage.setItem(key, JSON.stringify(list));
-            }
+            this._write(key, (list) => {
+                const idx = list.findIndex((i) => i.id === id);
+                if (idx !== -1) {
+                    list[idx] = { ...list[idx], ...changes };
+                }
+                return list;
+            });
         },
 
         getAllGlobal(prefix) {

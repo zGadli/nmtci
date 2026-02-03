@@ -365,6 +365,8 @@ const ScrollManager = {
     },
 
     restorePosition() {
+        if (window.location.hash) return;
+
         const saved = localStorage.getItem(this.scrollKey);
         if (saved) {
             setTimeout(() => window.scrollTo(0, parseInt(saved)), 100);
