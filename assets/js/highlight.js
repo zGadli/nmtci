@@ -12,8 +12,14 @@ const HighlightManager = {
         allowedColors: new Set(["yellow", "green", "blue", "red"]),
         storagePrefix: "nmtci-highlights-",
         selectors: {
-            content: (typeof CONFIG !== "undefined" && CONFIG.selectors?.contentDiv) || "#content",
-            paragraphs: (typeof CONFIG !== "undefined" && CONFIG.selectors?.paragraphs) || "p",
+            content:
+                (typeof CONFIG !== "undefined" &&
+                    CONFIG.selectors?.contentDiv) ||
+                "#content",
+            paragraphs:
+                (typeof CONFIG !== "undefined" &&
+                    CONFIG.selectors?.paragraphs) ||
+                "p",
             toolbar: "#highlight-toolbar",
             noteOverlay: "#noteOverlay",
             overviewOverlay: "#overviewOverlay",
@@ -31,7 +37,9 @@ const HighlightManager = {
         const path = window.location.pathname.replace(/\/$/, "");
         this.state.storageKey = `${this.config.storagePrefix}${path}`;
 
-        this.state.toolbar = document.querySelector(this.config.selectors.toolbar);
+        this.state.toolbar = document.querySelector(
+            this.config.selectors.toolbar,
+        );
 
         if (!this.state.toolbar) {
             console.warn("HighlightManager: Toolbar element not found.");
@@ -52,8 +60,19 @@ const HighlightManager = {
     },
 
     _bindSelectionEvents() {
-        document.addEventListener("pointerdown", () => {
+        const setPointerUp = () => {
+            this.state.isPointerDown = false;
+        };
+
+        document.addEventListener("pointerdown", (e) => {
             this.state.isPointerDown = true;
+
+            const isToolbar = e.target.closest(this.config.selectors.toolbar);
+            const isModal = e.target.closest(this.config.selectors.noteOverlay);
+
+            if (!isToolbar && !isModal && this.state.toolbar) {
+                this.state.toolbar.style.display = "none";
+            }
         });
 
         const handleDebouncedSelection = () => {
@@ -61,40 +80,79 @@ const HighlightManager = {
                 document
                     .querySelector(this.config.selectors.noteOverlay)
                     ?.classList.contains("active")
-            )
+            ) {
                 return;
+            }
 
-            if (this.state.isPointerDown) {
+            const selection = document.getSelection();
+            let isInsideActive = false;
+
+            if (this.state.activeId && selection.anchorNode) {
+                const node =
+                    selection.anchorNode.nodeType === 3
+                        ? selection.anchorNode.parentElement
+                        : selection.anchorNode;
+
+                const hl = node.closest(".highlight");
+                if (hl && hl.dataset.id === this.state.activeId) {
+                    isInsideActive = true;
+                }
+            }
+
+            if (!isInsideActive && this.state.toolbar) {
                 this.state.toolbar.style.display = "none";
             }
 
-            if (this.state.selectionTimer) clearTimeout(this.state.selectionTimer);
+            if (this.state.selectionTimer)
+                clearTimeout(this.state.selectionTimer);
 
             this.state.selectionTimer = setTimeout(() => {
                 if (this.state.isPointerDown) return;
 
                 const selection = document.getSelection();
+                const anchor = selection.anchorNode;
+
+                const targetNode =
+                    anchor && anchor.nodeType === 3
+                        ? anchor.parentElement
+                        : anchor;
+
                 this._handleSelectionChange({
-                    target: selection.anchorNode?.parentElement,
+                    target: targetNode,
                 });
             }, 300);
         };
 
         document.addEventListener("selectionchange", handleDebouncedSelection);
 
-        document.addEventListener("pointerup", (e) => {
-            this.state.isPointerDown = false;
+        const onPointerUp = (e) => {
+            setPointerUp();
 
-            const isToolbar = e.target.closest(this.config.selectors.toolbar);
-            const isModal = e.target.closest(this.config.selectors.noteOverlay);
+            const isToolbar =
+                e.target.closest &&
+                e.target.closest(this.config.selectors.toolbar);
+            const isModal =
+                e.target.closest &&
+                e.target.closest(this.config.selectors.noteOverlay);
 
             if (isToolbar || isModal) return;
+
             setTimeout(() => this._handleSelectionChange(e), 20);
+        };
+
+        document.addEventListener("pointerup", onPointerUp);
+        document.addEventListener("touchend", onPointerUp);
+
+        document.addEventListener("contextmenu", () => {
+            setPointerUp();
+            setTimeout(() => this._handleSelectionChange({}), 100);
         });
     },
 
     _bindToolbarEvents() {
-        this.state.toolbar.addEventListener("pointerdown", (e) => e.preventDefault());
+        this.state.toolbar.addEventListener("pointerdown", (e) =>
+            e.preventDefault(),
+        );
 
         this.state.toolbar.addEventListener("click", (e) => {
             e.stopPropagation();
@@ -112,7 +170,9 @@ const HighlightManager = {
     },
 
     _bindContentEvents() {
-        const contentDiv = document.querySelector(this.config.selectors.content);
+        const contentDiv = document.querySelector(
+            this.config.selectors.content,
+        );
         if (!contentDiv) return;
 
         contentDiv.addEventListener("click", (e) => {
@@ -145,10 +205,14 @@ const HighlightManager = {
             () => this.ui.closeNoteModal(this),
         );
 
-        const saveBtn = document.querySelector(this.config.selectors.noteSaveBtn);
+        const saveBtn = document.querySelector(
+            this.config.selectors.noteSaveBtn,
+        );
         if (saveBtn) saveBtn.onclick = () => this._saveNoteFromModal();
 
-        const noteInput = document.querySelector(this.config.selectors.noteInput);
+        const noteInput = document.querySelector(
+            this.config.selectors.noteInput,
+        );
         if (noteInput) {
             noteInput.addEventListener("keydown", (e) => {
                 if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
@@ -166,7 +230,9 @@ const HighlightManager = {
             () => this.ui.closeOverviewModal(this),
         );
 
-        const openBtn = document.querySelector(this.config.selectors.overviewToggleBtn);
+        const openBtn = document.querySelector(
+            this.config.selectors.overviewToggleBtn,
+        );
         if (openBtn) {
             openBtn.addEventListener("click", () => {
                 document
@@ -176,7 +242,9 @@ const HighlightManager = {
             });
         }
 
-        const overviewContent = document.querySelector(this.config.selectors.overviewContent);
+        const overviewContent = document.querySelector(
+            this.config.selectors.overviewContent,
+        );
         if (overviewContent) {
             overviewContent.addEventListener("click", (e) => {
                 const btn = e.target.closest(".icon-btn.copy-btn");
@@ -190,7 +258,10 @@ const HighlightManager = {
                             .writeText(text)
                             .then(() => {
                                 btn.classList.add("copied");
-                                setTimeout(() => btn.classList.remove("copied"), 2000);
+                                setTimeout(
+                                    () => btn.classList.remove("copied"),
+                                    2000,
+                                );
                             })
                             .catch(console.error);
                     }
@@ -199,7 +270,12 @@ const HighlightManager = {
 
                 const deleteBtn = e.target.closest(".icon-btn.delete-btn");
                 if (deleteBtn) {
-                    if (!confirm("Are you sure you want to delete this highlight?")) return;
+                    if (
+                        !confirm(
+                            "Are you sure you want to delete this highlight?",
+                        )
+                    )
+                        return;
 
                     const id = deleteBtn.dataset.id;
                     const key = deleteBtn.dataset.key;
@@ -210,9 +286,17 @@ const HighlightManager = {
                         this.storage.delete(key, id);
                     }
 
-                    const allData = this.storage.getAllGlobal(this.config.storagePrefix);
-                    const content = document.querySelector(this.config.selectors.overviewContent);
-                    this.ui.renderGlobalHighlights(content, allData, this.config.storagePrefix);
+                    const allData = this.storage.getAllGlobal(
+                        this.config.storagePrefix,
+                    );
+                    const content = document.querySelector(
+                        this.config.selectors.overviewContent,
+                    );
+                    this.ui.renderGlobalHighlights(
+                        content,
+                        allData,
+                        this.config.storagePrefix,
+                    );
                 }
             });
         }
@@ -262,7 +346,9 @@ const HighlightManager = {
             });
             span.classList.add(`highlight-${color}`);
 
-            this.storage.update(this.state.storageKey, this.state.activeId, { color });
+            this.storage.update(this.state.storageKey, this.state.activeId, {
+                color,
+            });
         }
 
         this._finishAction();
@@ -277,7 +363,10 @@ const HighlightManager = {
             return null;
         }
 
-        const context = this.dom.getSelectionContext(range, this.config.selectors.paragraphs);
+        const context = this.dom.getSelectionContext(
+            range,
+            this.config.selectors.paragraphs,
+        );
         if (!context) {
             this._finishAction();
             return null;
@@ -288,7 +377,12 @@ const HighlightManager = {
 
         if (
             start >= end ||
-            this.dom.checkOverlap(pIndex, start, end, this.storage.get(this.state.storageKey))
+            this.dom.checkOverlap(
+                pIndex,
+                start,
+                end,
+                this.storage.get(this.state.storageKey),
+            )
         ) {
             console.warn("Invalid range or overlap detected.");
             this._finishAction();
@@ -312,7 +406,10 @@ const HighlightManager = {
             text: range.toString(),
             color,
             note: "",
-            pageTitle: typeof CHAPTER_TITLE !== "undefined" ? CHAPTER_TITLE : document.title,
+            pageTitle:
+                typeof CHAPTER_TITLE !== "undefined"
+                    ? CHAPTER_TITLE
+                    : document.title,
             chapterNum: typeof CHAPTER_NUM !== "undefined" ? CHAPTER_NUM : null,
         });
 
@@ -329,7 +426,9 @@ const HighlightManager = {
         }
 
         if (this.state.activeId) {
-            this.storage.update(this.state.storageKey, this.state.activeId, { note: text });
+            this.storage.update(this.state.storageKey, this.state.activeId, {
+                note: text,
+            });
 
             const span = this.dom.getHighlightElement(this.state.activeId);
             if (span) {
@@ -354,22 +453,31 @@ const HighlightManager = {
         }
 
         const range = selection.getRangeAt(0);
-        const contentDiv = document.querySelector(this.config.selectors.content);
+        const contentDiv = document.querySelector(
+            this.config.selectors.content,
+        );
 
-        if (!contentDiv || !contentDiv.contains(range.commonAncestorContainer)) {
+        if (
+            !contentDiv ||
+            !contentDiv.contains(range.commonAncestorContainer)
+        ) {
             this.state.toolbar.style.display = "none";
             return;
         }
 
         const container = range.commonAncestorContainer;
-        const node = container.nodeType === 1 ? container : container.parentElement;
+        const node =
+            container.nodeType === 1 ? container : container.parentElement;
         if (!node.closest("p")) return;
 
         this.state.activeRange = range;
         this.state.activeId = null;
         this.state.toolbar.classList.remove("edit-mode");
 
-        this.ui.positionToolbar(this.state.toolbar, range.getBoundingClientRect());
+        this.ui.positionToolbar(
+            this.state.toolbar,
+            range.getBoundingClientRect(),
+        );
     },
 
     _activateEditMode(span) {
@@ -377,7 +485,10 @@ const HighlightManager = {
         this.state.activeRange = null;
         this.state.toolbar.classList.add("edit-mode");
 
-        this.ui.positionToolbar(this.state.toolbar, span.getBoundingClientRect());
+        this.ui.positionToolbar(
+            this.state.toolbar,
+            span.getBoundingClientRect(),
+        );
     },
 
     _finishAction() {
@@ -388,7 +499,9 @@ const HighlightManager = {
 
     _restoreHighlightsFromStorage() {
         const list = this.storage.get(this.state.storageKey);
-        const allPs = document.querySelectorAll(this.config.selectors.paragraphs);
+        const allPs = document.querySelectorAll(
+            this.config.selectors.paragraphs,
+        );
 
         list.forEach((item) => {
             const p = allPs[item.pIndex];
@@ -421,11 +534,17 @@ const HighlightManager = {
         getSelectionContext(range, pSelector) {
             const container = range.commonAncestorContainer;
             const node =
-                container.nodeType === Node.TEXT_NODE ? container.parentElement : container;
+                container.nodeType === Node.TEXT_NODE
+                    ? container.parentElement
+                    : container;
             const p = node.closest(pSelector);
 
             if (!p) return null;
-            if (!p.contains(range.startContainer) || !p.contains(range.endContainer)) return null;
+            if (
+                !p.contains(range.startContainer) ||
+                !p.contains(range.endContainer)
+            )
+                return null;
 
             const allPs = Array.from(document.querySelectorAll(pSelector));
             const pIndex = allPs.indexOf(p);
@@ -449,7 +568,11 @@ const HighlightManager = {
 
         wrapRange(range, id, color) {
             const fragment = range.cloneContents();
-            if (fragment.querySelector("p, div, article, section, h1, h2, h3, li")) {
+            if (
+                fragment.querySelector(
+                    "p, div, article, section, h1, h2, h3, li",
+                )
+            ) {
                 console.error("Cannot highlight block-level elements.");
                 return false;
             }
@@ -471,7 +594,10 @@ const HighlightManager = {
         },
 
         restoreHighlightDOM(p, item) {
-            const treeWalker = document.createTreeWalker(p, NodeFilter.SHOW_TEXT);
+            const treeWalker = document.createTreeWalker(
+                p,
+                NodeFilter.SHOW_TEXT,
+            );
             let currentNode = treeWalker.nextNode();
             let currentOffset = 0;
             let startNode = null,
@@ -520,7 +646,8 @@ const HighlightManager = {
             toolbar.style.display = "flex";
             const virtualRef = { getBoundingClientRect: () => rect };
 
-            const { computePosition, flip, shift, offset } = window.FloatingUIDOM;
+            const { computePosition, flip, shift, offset } =
+                window.FloatingUIDOM;
 
             computePosition(virtualRef, toolbar, {
                 placement: "bottom",
@@ -536,8 +663,12 @@ const HighlightManager = {
         },
 
         openNoteModal(manager) {
-            const modal = document.querySelector(manager.config.selectors.noteOverlay);
-            const input = document.querySelector(manager.config.selectors.noteInput);
+            const modal = document.querySelector(
+                manager.config.selectors.noteOverlay,
+            );
+            const input = document.querySelector(
+                manager.config.selectors.noteInput,
+            );
             let currentNote = "";
 
             if (manager.state.activeId) {
@@ -554,22 +685,36 @@ const HighlightManager = {
         },
 
         closeNoteModal(manager) {
-            document.querySelector(manager.config.selectors.noteOverlay).classList.remove("active");
+            document
+                .querySelector(manager.config.selectors.noteOverlay)
+                .classList.remove("active");
             manager._finishAction();
         },
 
         openOverviewModal(manager) {
-            const overlay = document.querySelector(manager.config.selectors.overviewOverlay);
-            const content = document.querySelector(manager.config.selectors.overviewContent);
+            const overlay = document.querySelector(
+                manager.config.selectors.overviewOverlay,
+            );
+            const content = document.querySelector(
+                manager.config.selectors.overviewContent,
+            );
 
-            const allData = manager.storage.getAllGlobal(manager.config.storagePrefix);
-            this.renderGlobalHighlights(content, allData, manager.config.storagePrefix);
+            const allData = manager.storage.getAllGlobal(
+                manager.config.storagePrefix,
+            );
+            this.renderGlobalHighlights(
+                content,
+                allData,
+                manager.config.storagePrefix,
+            );
 
             overlay.classList.add("active");
         },
 
         closeOverviewModal() {
-            document.getElementById("overviewOverlay").classList.remove("active");
+            document
+                .getElementById("overviewOverlay")
+                .classList.remove("active");
         },
 
         renderGlobalHighlights(container, data, storagePrefix) {
@@ -676,16 +821,30 @@ const HighlightManager = {
                 const key = localStorage.key(i);
                 if (key.startsWith(prefix)) {
                     try {
-                        const highlights = JSON.parse(localStorage.getItem(key));
-                        if (Array.isArray(highlights) && highlights.length > 0) {
+                        const highlights = JSON.parse(
+                            localStorage.getItem(key),
+                        );
+                        if (
+                            Array.isArray(highlights) &&
+                            highlights.length > 0
+                        ) {
                             const path = key.substring(prefix.length);
                             const first = highlights[0];
                             const title = first.pageTitle || "Unknown Chapter";
                             const chapterNum =
                                 first.chapterNum ||
-                                path.split("/").pop()?.replace(/-/g, " ").replace(".html", "");
+                                path
+                                    .split("/")
+                                    .pop()
+                                    ?.replace(/-/g, " ")
+                                    .replace(".html", "");
 
-                            allData.push({ path, title, chapterNum, highlights });
+                            allData.push({
+                                path,
+                                title,
+                                chapterNum,
+                                highlights,
+                            });
                         }
                     } catch (e) {
                         console.error("Parse error", key, e);

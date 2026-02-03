@@ -1,6 +1,14 @@
 source "https://rubygems.org"
 
-gem "github-pages", group: :jekyll_plugins
+gem "jekyll", "~> 4.4"
 
+group :jekyll_plugins do
+  gem "jekyll-sitemap"
+  gem "jekyll-minifier"
+end
+
+gem "kramdown"
+gem "kramdown-parser-gfm"
 gem "webrick"
-gem "jekyll-minifier"
+
+gem "wdm", "~> 0.2.0", :install_if => Gem.win_platform?

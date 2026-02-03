@@ -74,7 +74,9 @@ const ThemeManager = {
         DOM.root.style.setProperty("--bg-color", theme.bg);
         DOM.root.style.setProperty("--text-color", theme.text);
         DOM.root.setAttribute("data-theme", themeName);
-        const metaThemeColor = document.querySelector('meta[name="theme-color"]');
+        const metaThemeColor = document.querySelector(
+            'meta[name="theme-color"]',
+        );
         if (metaThemeColor) metaThemeColor.setAttribute("content", theme.bg);
         DOM.themeBtns.forEach((btn) => {
             if (btn.dataset.theme === themeName) {
@@ -89,7 +91,10 @@ const ThemeManager = {
         if (savedSettings) {
             const settings = JSON.parse(savedSettings);
             if (settings.fontFamily) {
-                DOM.root.style.setProperty("--font-family", settings.fontFamily);
+                DOM.root.style.setProperty(
+                    "--font-family",
+                    settings.fontFamily,
+                );
             }
             this.apply(settings.theme || "light");
         } else {
@@ -98,17 +103,24 @@ const ThemeManager = {
     },
     save() {
         const savedRaw = localStorage.getItem(CONFIG.storageKeys.settings);
-        let settings = savedRaw ? JSON.parse(savedRaw) : { fontSize: 18, lineHeight: 1.6 };
+        let settings = savedRaw
+            ? JSON.parse(savedRaw)
+            : { fontSize: 18, lineHeight: 1.6 };
         const activeBtn = document.querySelector(".theme-btn.active");
         settings.theme = activeBtn ? activeBtn.dataset.theme : "light";
-        localStorage.setItem(CONFIG.storageKeys.settings, JSON.stringify(settings));
+        localStorage.setItem(
+            CONFIG.storageKeys.settings,
+            JSON.stringify(settings),
+        );
     },
 };
 
 const ResumeManager = {
     init() {
         try {
-            const lastRead = JSON.parse(localStorage.getItem(CONFIG.storageKeys.lastRead));
+            const lastRead = JSON.parse(
+                localStorage.getItem(CONFIG.storageKeys.lastRead),
+            );
             if (lastRead && lastRead.url) {
                 DOM.resumeBtn.href = lastRead.url;
                 let chapterText =
@@ -142,7 +154,8 @@ const ContentManager = {
     async init() {
         try {
             const response = await fetch("chapters.json");
-            if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+            if (!response.ok)
+                throw new Error(`HTTP error! Status: ${response.status}`);
 
             this.chapters = await response.json();
             this.chapters.sort((a, b) => a.id - b.id);
@@ -165,7 +178,9 @@ const ContentManager = {
 
         DOM.sortBtn.addEventListener("click", () => {
             this.state.sortDesc = !this.state.sortDesc;
-            DOM.sortLabel.textContent = this.state.sortDesc ? "Newest First" : "Oldest First";
+            DOM.sortLabel.textContent = this.state.sortDesc
+                ? "Newest First"
+                : "Oldest First";
             this.refreshDataSource();
         });
     },
@@ -173,7 +188,8 @@ const ContentManager = {
     updateNavButtons() {
         if (this.chapters.length > 0) {
             DOM.firstChapterBtn.href = this.chapters[0].url;
-            DOM.latestChapterBtn.href = this.chapters[this.chapters.length - 1].url;
+            DOM.latestChapterBtn.href =
+                this.chapters[this.chapters.length - 1].url;
         } else {
             DOM.firstChapterBtn.classList.add("disabled");
             DOM.latestChapterBtn.classList.add("disabled");
@@ -205,13 +221,17 @@ const ContentManager = {
         if (this.state.searchQuery) {
             const q = this.state.searchQuery.toLowerCase();
             this.filteredChapters = this.chapters.filter(
-                (ch) => ch.id.toString().includes(q) || ch.title.toLowerCase().includes(q),
+                (ch) =>
+                    ch.id.toString().includes(q) ||
+                    ch.title.toLowerCase().includes(q),
             );
         } else {
             this.filteredChapters = [...this.chapters];
         }
 
-        this.filteredChapters.sort((a, b) => (this.state.sortDesc ? b.id - a.id : a.id - b.id));
+        this.filteredChapters.sort((a, b) =>
+            this.state.sortDesc ? b.id - a.id : a.id - b.id,
+        );
 
         DOM.chapterList.innerHTML = "";
         this.state.renderedCount = 0;
@@ -236,7 +256,10 @@ const ContentManager = {
         }
 
         const start = this.state.renderedCount;
-        const end = Math.min(start + CONFIG.itemsPerLoad, this.filteredChapters.length);
+        const end = Math.min(
+            start + CONFIG.itemsPerLoad,
+            this.filteredChapters.length,
+        );
 
         const chunk = this.filteredChapters.slice(start, end);
         const fragment = document.createDocumentFragment();
@@ -273,7 +296,8 @@ const ContentManager = {
 
         DOM.latestList.innerHTML = latestChapters
             .map((ch, index) => {
-                const badge = index === 0 ? `<span class="new-badge">New</span>` : "";
+                const badge =
+                    index === 0 ? `<span class="new-badge">New</span>` : "";
                 return `
                 <a href="${ch.url}" class="latest-item">
                     <div class="latest-meta">
@@ -292,7 +316,8 @@ const PWAManager = {
     deferredPrompt: null,
     init() {
         if (!DOM.installFab) return;
-        const isDismissed = localStorage.getItem(CONFIG.storageKeys.pwaDismissed) === "true";
+        const isDismissed =
+            localStorage.getItem(CONFIG.storageKeys.pwaDismissed) === "true";
         window.addEventListener("beforeinstallprompt", (e) => {
             e.preventDefault();
             this.deferredPrompt = e;
@@ -322,7 +347,8 @@ const PWAManager = {
                 this.deferredPrompt.prompt();
                 const { outcome } = await this.deferredPrompt.userChoice;
                 this.deferredPrompt = null;
-                if (outcome === "accepted") DOM.installFab.style.display = "none";
+                if (outcome === "accepted")
+                    DOM.installFab.style.display = "none";
             });
         }
         if (DOM.dismissAction) {
@@ -343,7 +369,8 @@ const SynopsisManager = {
         DOM.bookDescription.classList.add("collapsed");
 
         DOM.toggleSynopsisBtn.addEventListener("click", () => {
-            const isCollapsed = DOM.bookDescription.classList.contains("collapsed");
+            const isCollapsed =
+                DOM.bookDescription.classList.contains("collapsed");
 
             if (isCollapsed) {
                 DOM.bookDescription.classList.remove("collapsed");
@@ -351,7 +378,10 @@ const SynopsisManager = {
             } else {
                 DOM.bookDescription.classList.add("collapsed");
                 DOM.toggleSynopsisBtn.textContent = "Show More";
-                DOM.bookDescription.scrollIntoView({ behavior: "smooth", block: "center" });
+                DOM.bookDescription.scrollIntoView({
+                    behavior: "smooth",
+                    block: "center",
+                });
             }
         });
     },
