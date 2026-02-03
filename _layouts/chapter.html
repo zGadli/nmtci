@@ -662,6 +662,18 @@
             </div>
         </div>
 
+        <button class="settings-btn" id="toggleHighlightsList" aria-label="View All Highlights"
+            style="margin-bottom: 12px;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round">
+                <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="16" y1="13" x2="8" y2="13"></line>
+                <line x1="16" y1="17" x2="8" y2="17"></line>
+                <line x1="10" y1="9" x2="8" y2="9"></line>
+            </svg>
+        </button>
+
         <button class="settings-btn" id="toggleSettings" aria-label="Settings">
             <svg xmlns="http://www.w3.org/2000/svg" height="24" width="24" viewBox="0 0 640 640">
                 <path
@@ -698,15 +710,31 @@
         </div>
     </div>
 
-    <div class="note-modal-overlay" id="noteOverlay">
-        <div class="note-modal">
+    <div class="modal-overlay" id="noteOverlay">
+        <div class="modal">
             <div class="modal-header">
                 <h3>Highlight Note</h3>
             </div>
             <textarea id="noteInput" placeholder="Add your thoughts here..."></textarea>
-            <div class="note-modal-actions">
+            <div class="modal-actions">
                 <button class="ui-button btn-secondary" id="cancelNote">Cancel</button>
                 <button class="ui-button btn-primary" id="saveNote">Save Note</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="overviewOverlay">
+        <div class="modal overview-modal">
+            <div class="modal-header">
+                <h3>My Highlights & Notes</h3>
+                <button class="icon-close" id="closeOverview" aria-label="Close">
+                    <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="overview-content" id="overviewContent">
             </div>
         </div>
     </div>
@@ -714,26 +742,8 @@
     <script>
         const PREV_CHAPTER_NUM = "{{ page.prev }}";
         const NEXT_CHAPTER_NUM = "{{ page.next }}";
-
-        function saveReadingHistory() {
-            const cleanPath = window.location.pathname.replace(/\/$/, "");
-            const fileName = cleanPath.split("/").pop();
-            const chapterId = parseInt(fileName.replace(".html", ""), 10);
-
-            const chapterTitle = `{{ page.title }}`;
-
-            const history = {
-                id: chapterId,
-                title: chapterTitle,
-                url: window.location.href,
-                timestamp: Date.now(),
-            };
-
-            localStorage.setItem(
-                "nmtci-last-read",
-                JSON.stringify(history),
-            );
-        }
+        const CHAPTER_TITLE = "{{ page.title }}";
+        const CHAPTER_NUM = "{{ page.id }}";
     </script>
     <script src="{{ '/assets/js/vendor/floating-ui/core.js' | relative_url }}"></script>
     <script src="{{ '/assets/js/vendor/floating-ui/dom.js' | relative_url }}"></script>

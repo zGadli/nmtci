@@ -1,4 +1,4 @@
-const CACHE_NAME = "nmtci-cache-v19";
+const CACHE_NAME = "nmtci-cache-v21";
 const ASSETS = [
     "/nmtci/",
     "/nmtci/index.html",
@@ -6,6 +6,7 @@ const ASSETS = [
     "/nmtci/assets/js/index.js",
     "/nmtci/assets/js/chapter.js",
     "/nmtci/assets/js/highlight.js",
+    "/nmtci/assets/js/audio.js",
     "/nmtci/assets/css/highlights.css",
     "/nmtci/assets/js/vendor/floating-ui/core.js",
     "/nmtci/assets/js/vendor/floating-ui/dom.js",
@@ -98,6 +99,10 @@ self.addEventListener("fetch", (event) => {
                         const responseToCache = networkResponse.clone();
 
                         const cacheUpdate = new Promise((resolve) => {
+                            if (!event.request.url.startsWith("http")) {
+                                resolve();
+                                return;
+                            }
                             if (responseToCache.redirected) {
                                 responseToCache.blob().then((bodyBlob) => {
                                     const cleanResponse = new Response(bodyBlob, {

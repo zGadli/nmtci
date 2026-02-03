@@ -412,9 +412,14 @@ const ScrollManager = {
 
 const HistoryManager = {
     init() {
-        if (typeof saveReadingHistory === "function") {
-            saveReadingHistory();
-        }
+        const history = {
+            id: CHAPTER_NUM,
+            title: CHAPTER_TITLE,
+            url: window.location.href,
+            timestamp: Date.now(),
+        };
+
+        localStorage.setItem("nmtci-last-read", JSON.stringify(history));
     },
 };
 
