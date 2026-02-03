@@ -65,7 +65,7 @@ const HighlightManager = {
 
         document.addEventListener("pointerup", (e) => {
             const isToolbar = e.target.closest(this.config.selectors.toolbar);
-            const isModal = e.target.closest(".note-modal");
+            const isModal = e.target.closest(this.config.selectors.noteOverlay);
 
             if (isToolbar || isModal) return;
             setTimeout(() => this._handleSelectionChange(e), 20);
