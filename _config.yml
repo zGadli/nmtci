@@ -24,6 +24,13 @@ kramdown:
 permalink: pretty
 
 exclude:
+    - vendor/
+    - .bundle/
+    - .sass-cache/
+    - Gemfile
+    - Gemfile.lock
+    - _tools/
+    - node_modules/
     - scripts
     - README.md
     - LICENSE
