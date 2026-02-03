@@ -3,6 +3,7 @@ const HighlightManager = {
     activeRange: null,
     activeId: null,
     storageKey: "",
+    allowedColors: new Set(["yellow", "green", "blue", "red"]),
 
     init() {
         const path = window.location.pathname.replace(/\/$/, "");
@@ -23,10 +24,21 @@ const HighlightManager = {
         const contentDiv = document.querySelector(CONFIG.selectors.contentDiv);
         const modalOverlay = document.getElementById("noteOverlay");
 
-        document.addEventListener("mouseup", (e) => {
+        document.addEventListener("pointerup", (e) => {
             if (e.target.closest("#highlight-toolbar") || e.target.closest(".note-modal")) return;
 
-            setTimeout(() => this.handleSelection(e), 10);
+            setTimeout(() => this.handleSelection(e), 20);
+        });
+
+        document.addEventListener("selectionchange", () => {
+            if (this.selectionTimer) clearTimeout(this.selectionTimer);
+            this.selectionTimer = setTimeout(() => {
+                this.handleSelection({ target: document.getSelection().anchorNode?.parentElement });
+            }, 300);
+        });
+
+        this.toolbar.addEventListener("pointerdown", (e) => {
+            e.preventDefault();
         });
 
         this.toolbar.addEventListener("click", (e) => {
@@ -112,7 +124,7 @@ const HighlightManager = {
         const { computePosition, flip, shift, offset } = window.FloatingUIDOM;
 
         computePosition(virtualReference, this.toolbar, {
-            placement: "top",
+            placement: "bottom",
             middleware: [offset(10), flip(), shift({ padding: 5 })],
         }).then(({ x, y }) => {
             Object.assign(this.toolbar.style, {
@@ -125,75 +137,155 @@ const HighlightManager = {
     },
 
     createHighlight(color) {
+        if (!this.allowedColors.has(color)) {
+            console.error(`Invalid highlight color: ${color}`);
+            return null;
+        }
+
         if (!this.activeRange && this.activeId) {
-            const span = document.querySelector(`.highlight[data-id="${this.activeId}"]`);
-            if (span) {
-                const hasNote = span.classList.contains("has-note");
-                span.className = `highlight highlight-${color} ${hasNote ? "has-note" : ""}`;
-                this.updateStorage(this.activeId, { color });
-            }
-            this.finishAction();
-            return this.activeId;
+            return this.updateExistingHighlight(color);
         }
 
         if (this.activeRange) {
-            const range = this.activeRange;
+            if (this.activeRange.collapsed) return null;
+            return this.createNewHighlight(color);
+        }
 
-            const container = range.commonAncestorContainer;
-            const node = container.nodeType === 1 ? container : container.parentElement;
-            const p = node.closest("p");
+        return null;
+    },
 
-            if (!p) {
-                console.error("No paragraph found for highlight");
-                return null;
-            }
+    updateExistingHighlight(color) {
+        const span = document.querySelector(`span.highlight[data-id="${this.activeId}"]`);
 
-            const allPs = Array.from(document.querySelectorAll(CONFIG.selectors.paragraphs));
-            const pIndex = allPs.indexOf(p);
+        if (span) {
+            const oldColorClass = Array.from(span.classList).find(
+                (c) => c.startsWith("highlight-") && c !== "highlight",
+            );
+            if (oldColorClass) span.classList.remove(oldColorClass);
 
-            if (pIndex === -1) {
-                console.warn("Paragraph not found in configured selectors.");
-                return null;
-            }
+            span.classList.add(`highlight-${color}`);
 
-            const preCaretRange = range.cloneRange();
-            preCaretRange.selectNodeContents(p);
-            preCaretRange.setEnd(range.startContainer, range.startOffset);
+            this.updateStorage(this.activeId, { color });
+        } else {
+            console.warn(`Highlight ID ${this.activeId} not found in DOM.`);
+        }
 
-            const start = preCaretRange.toString().length;
-            const end = start + range.toString().length;
+        this.finishAction();
+        return this.activeId;
+    },
 
-            const highlights = this.getStored();
-            const hasOverlap = highlights.some((h) => {
-                return h.pIndex === pIndex && start < h.end && end > h.start;
-            });
+    createNewHighlight(color) {
+        const range = this.activeRange;
 
-            if (hasOverlap) {
-                console.warn("Overlapping highlights are not allowed.");
-                this.finishAction();
-                return null;
-            }
-
-            const id = Date.now().toString(36);
-            const text = range.toString();
-
-            const span = document.createElement("span");
-            span.className = `highlight highlight-${color}`;
-            span.dataset.id = id;
-
-            try {
-                span.appendChild(range.extractContents());
-                range.insertNode(span);
-            } catch (e) {
-                console.warn("Highlight failed:", e);
-                return null;
-            }
-
-            const data = { id, pIndex, start, end, text, color, note: "" };
-            this.saveToStorage(data);
-
+        if (!range.commonAncestorContainer.isConnected) {
+            console.warn("Selection is no longer attached to the document.");
             this.finishAction();
-            return id;
+            return null;
+        }
+
+        const context = this.getSelectionContext(range);
+        if (!context) {
+            this.finishAction();
+            return null;
+        }
+
+        const { p, pIndex } = context;
+        const { start, end } = this.calculateOffsets(range, p);
+
+        if (start >= end) {
+            console.warn("Invalid range calculation (start >= end).");
+            this.finishAction();
+            return null;
+        }
+
+        if (this.checkOverlap(pIndex, start, end)) {
+            console.warn("Overlapping highlights are not allowed.");
+            this.finishAction();
+            return null;
+        }
+
+        const id = crypto.randomUUID
+            ? crypto.randomUUID()
+            : Date.now().toString(36) + Math.random().toString(36).substr(2);
+
+        const success = this.wrapRangeInHighlight(range, id, color);
+        if (!success) {
+            this.finishAction();
+            return null;
+        }
+
+        const text = range.toString();
+        this.saveToStorage({ id, pIndex, start, end, text, color, note: "" });
+
+        this.finishAction();
+        return id;
+    },
+
+    getSelectionContext(range) {
+        const container = range.commonAncestorContainer;
+        const node = container.nodeType === Node.TEXT_NODE ? container.parentElement : container;
+        const p = node.closest(CONFIG.selectors.paragraphs || "p");
+
+        if (!p) {
+            console.warn("Selection is outside a valid paragraph or spans multiple blocks.");
+            return null;
+        }
+
+        if (!p.contains(range.startContainer) || !p.contains(range.endContainer)) {
+            console.warn("Multi-paragraph selection detected (not supported).");
+            return null;
+        }
+
+        const allPs = Array.from(document.querySelectorAll(CONFIG.selectors.paragraphs));
+        const pIndex = allPs.indexOf(p);
+
+        if (pIndex === -1) {
+            console.warn("Paragraph context not found in document flow.");
+            return null;
+        }
+
+        return { p, pIndex };
+    },
+
+    checkOverlap(pIndex, start, end) {
+        const highlights = this.getStored();
+        return highlights.some((h) => {
+            return h.pIndex === pIndex && start < h.end && end > h.start;
+        });
+    },
+
+    calculateOffsets(range, p) {
+        const preCaretRange = range.cloneRange();
+        preCaretRange.selectNodeContents(p);
+        preCaretRange.setEnd(range.startContainer, range.startOffset);
+
+        const start = preCaretRange.toString().length;
+        const end = start + range.toString().length;
+
+        return { start, end };
+    },
+
+    wrapRangeInHighlight(range, id, color) {
+        const fragment = range.cloneContents();
+        if (fragment.querySelector("p, div, article, section, h1, h2, h3, h4, h5, h6, li")) {
+            console.error("Cannot create a highlight that contains block-level elements.");
+            return false;
+        }
+
+        const span = document.createElement("span");
+        span.className = `highlight highlight-${color}`;
+        span.dataset.id = id;
+
+        try {
+            const extracted = range.extractContents();
+            span.appendChild(extracted);
+            range.insertNode(span);
+
+            span.parentElement.normalize();
+            return true;
+        } catch (e) {
+            console.error("Critical DOM failure during highlight wrapping:", e);
+            return false;
         }
     },
 

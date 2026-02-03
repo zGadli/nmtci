@@ -2,8 +2,6 @@
 _site/
 
 # Ignore the local Ruby environment files
-Gemfile
-Gemfile.lock
 .sass-cache/
 .jekyll-cache/
 .jekyll-metadata
