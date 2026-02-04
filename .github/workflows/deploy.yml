@@ -32,8 +32,6 @@ jobs:
               uses: oven-sh/setup-bun@v2
               with:
                   bun-version: latest
-                  cache: "bun"
-                  cache-bin-dir: "_tools"
 
             - name: Install Dependencies
               working-directory: _tools
