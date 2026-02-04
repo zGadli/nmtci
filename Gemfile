@@ -4,7 +4,6 @@ gem "jekyll", "~> 4.4"
 
 group :jekyll_plugins do
   gem "jekyll-sitemap"
-  gem "jekyll-minifier"
 end
 
 gem "kramdown"

@@ -7,7 +7,6 @@ encoding: "utf-8"
 
 plugins:
     - jekyll-sitemap
-    - jekyll-minifier
 
 defaults:
     - scope:
@@ -18,7 +17,7 @@ defaults:
 
 markdown: kramdown
 kramdown:
-    smart_quotes: ["lsquo", "rsquo", "ldquo", "rdquo"]
+    smart_quotes: "lsquo,rsquo,ldquo,rdquo"
     auto_ids: true
     parse_block_html: true
 permalink: pretty

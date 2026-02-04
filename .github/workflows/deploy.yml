@@ -32,6 +32,8 @@ jobs:
               uses: oven-sh/setup-bun@v2
               with:
                   bun-version: latest
+                  cache: "bun"
+                  cache-bin-dir: "_tools"
 
             - name: Install Dependencies
               working-directory: _tools
@@ -62,8 +64,14 @@ jobs:
               env:
                   JEKYLL_ENV: production
 
+            - name: Minify All
+              working-directory: _tools
+              run: bun run src/minify.ts
+
             - name: Upload artifact
               uses: actions/upload-pages-artifact@v3
+              with:
+                  path: ./_site
 
     deploy:
         environment:
@@ -83,6 +91,7 @@ jobs:
               uses: oven-sh/setup-bun@v2
               with:
                   bun-version: latest
+                  cache: "bun"
 
             - name: Install Dependencies (for Notification)
               working-directory: _tools
