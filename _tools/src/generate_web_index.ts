@@ -15,6 +15,9 @@ interface Chapter {
     id: number;
     title: string;
     url: string;
+    fileName: string;
+    filePath: string;
+    content: string;
 }
 
 async function parseChapterFile(fileName: string): Promise<Chapter | null> {
@@ -26,7 +29,9 @@ async function parseChapterFile(fileName: string): Promise<Chapter | null> {
         const match = content.match(CONFIG.chapterPattern);
 
         if (!match) {
-            console.warn(`[WARN] Skipping "${fileName}": No valid chapter header found.`);
+            console.warn(
+                `[WARN] Skipping "${fileName}": No valid chapter header found.`,
+            );
             return null;
         }
 
@@ -34,7 +39,9 @@ async function parseChapterFile(fileName: string): Promise<Chapter | null> {
         const cleanFileName = basename(fileName, extname(fileName));
 
         if (!idStr) {
-            console.warn(`[WARN] Skipping "${fileName}": Match found but ID is missing.`);
+            console.warn(
+                `[WARN] Skipping "${fileName}": Match found but ID is missing.`,
+            );
             return null;
         }
 
@@ -42,6 +49,9 @@ async function parseChapterFile(fileName: string): Promise<Chapter | null> {
             id: parseFloat(idStr),
             title: (rawTitle || "").trim(),
             url: `${CONFIG.urlPrefix}/${cleanFileName}`,
+            fileName: cleanFileName,
+            filePath: filePath,
+            content: content,
         };
     } catch (error) {
         console.error(`[ERROR] Failed to read file "${fileName}":`, error);
@@ -49,12 +59,51 @@ async function parseChapterFile(fileName: string): Promise<Chapter | null> {
     }
 }
 
+function stripExistingFrontMatter(content: string): string {
+    const frontMatterRegex = /^---\r?\n[\s\S]*?\r?\n---\r?\n/;
+    return content.replace(frontMatterRegex, "");
+}
+
+async function updateFileWithFrontMatter(
+    chapter: Chapter,
+    prev: Chapter | undefined,
+    next: Chapter | undefined,
+) {
+    const safeTitle = chapter.title.replace(/"/g, '\\"');
+
+    const frontMatter = `---
+title: "${safeTitle}"
+id: "${chapter.id}"
+prev: "${prev ? prev.fileName : ""}"
+next: "${next ? next.fileName : ""}"
+---
+`;
+
+    const cleanContent = stripExistingFrontMatter(chapter.content);
+    const newContent = frontMatter + cleanContent;
+
+    await Bun.write(chapter.filePath, newContent);
+}
+
 async function writeIndexFile(chapters: Chapter[]): Promise<void> {
+    const cleanChapters = chapters.map(({ id, title, url }) => ({
+        id,
+        title,
+        url,
+    }));
+
     try {
-        await Bun.write(CONFIG.outputFile, JSON.stringify(chapters, null, 2));
-        console.log(`\nSuccess: Indexed ${chapters.length} chapters to "${CONFIG.outputFile}"`);
+        await Bun.write(
+            CONFIG.outputFile,
+            JSON.stringify(cleanChapters, null, 2),
+        );
+        console.log(
+            `\nSuccess: Indexed ${chapters.length} chapters to "${CONFIG.outputFile}"`,
+        );
     } catch (error) {
-        throw new Error(`Failed to write output file: ${error instanceof Error ? error.message : error}`);
+        throw new Error(
+            `Failed to write output file: ${error instanceof Error ? error.message : error}`,
+        );
     }
 }
 
@@ -77,6 +126,19 @@ async function generateWebIndex() {
         const validChapters = results
             .filter((c): c is Chapter => c !== null)
             .sort((a, b) => a.id - b.id);
+
+        console.log(
+            `Found ${validChapters.length} valid chapters. Injecting front matter...`,
+        );
+
+        for (let i = 0; i < validChapters.length; i++) {
+            const current = validChapters[i];
+            const prev = validChapters[i - 1];
+            const next = validChapters[i + 1];
+
+            await updateFileWithFrontMatter(current, prev, next);
+        }
+        console.log("Front matter injection complete.");
 
         await writeIndexFile(validChapters);
     } catch (error) {
