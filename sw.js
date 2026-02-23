@@ -1,4 +1,4 @@
-const CACHE_NAME = "nmtci-cache-v24";
+const CACHE_NAME = "nmtci-cache-v25";
 const ASSETS = [
     "/nmtci/",
     "/nmtci/index.html",
