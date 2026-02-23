@@ -206,7 +206,7 @@ a {
     border-radius: 16px;
     margin-bottom: 16px;
     box-shadow: 0 10px 40px -10px var(--shadow-color);
-    width: 300px;
+    width: 340px;
     opacity: 0;
     visibility: hidden;
     transform: translateY(10px) scale(0.98);
@@ -249,6 +249,63 @@ a {
     font-size: 13px;
     font-weight: bold;
     color: var(--text-color);
+}
+
+.segmented-control {
+    display: flex;
+    background-color: var(--input-bg, var(--bg-color));
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    overflow: hidden;
+    width: 100%;
+    width: fit-content;
+}
+
+.segment-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 36px;
+    height: 36px;
+    padding: 10 12px;
+    background: transparent;
+    color: var(--text-color);
+    border: none;
+    cursor: pointer;
+    font-size: 18px;
+    font-family: inherit;
+    font-weight: 600;
+    transition:
+        background-color 0.2s,
+        color 0.2s;
+}
+
+.segment-btn:not(:last-child) {
+    border-right: 1px solid var(--border-color);
+}
+
+.segment-btn.active {
+    background-color: var(--text-color);
+    color: var(--bg-color);
+}
+
+.segment-btn svg {
+    width: 16px;
+    height: 16px;
+    transition: fill 0.2s;
+}
+
+.setting-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.setting-row .setting-item {
+    margin-bottom: 0;
 }
 
 .control-input {

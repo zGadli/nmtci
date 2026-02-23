@@ -37,14 +37,14 @@
             rel="stylesheet"
         />
         <link
-            href="https://fonts.googleapis.com/css2?family=Baskervville:ital@0;1&family=Bitter:ital,wght@0,100..900;1,100..900&family=Caveat:wght@400..700&family=Coming+Soon&family=EB+Garamond:ital,wght@0,400..800;1,400..800&family=Indie+Flower&family=Literata:ital,opsz,wght@0,7..72,200..900;1,7..72,200..900&family=Merriweather:ital,wght@0,300..900;1,300..900&family=Merriweather+Sans:ital,wght@0,300..800;1,300..800&family=Nunito+Sans:ital,opsz,wght@0,6..12,200..1000;1,6..12,200..1000&family=Patrick+Hand&display=swap"
+            href="https://fonts.googleapis.com/css2?family=Baskervville:ital@0;1&family=Bitter:ital,wght@0,100..900;1,100..900&family=Caveat:wght@400..700&family=Coming+Soon&family=EB+Garamond:ital,wght@0,400..800;1,400..800&family=Fira+Mono:wght@400;500;700&family=Indie+Flower&family=Literata:ital,opsz,wght@0,7..72,200..900;1,7..72,200..900&family=Merriweather:ital,wght@0,300..900;1,300..900&family=Merriweather+Sans:ital,wght@0,300..800;1,300..800&family=Noto+Serif:ital,wght@0,100..900;1,100..900&family=Nunito+Sans:ital,opsz,wght@0,6..12,200..1000;1,6..12,200..1000&family=Patrick+Hand&family=Prompt:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Ubuntu:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400;1,500;1,700&family=Ysabeau+Office:ital,wght@0,1..1000;1,1..1000&display=swap"
             rel="stylesheet"
             media="print"
             onload="this.media = 'all'"
         />
         <noscript>
             <link
-                href="https://fonts.googleapis.com/css2?family=Baskervville:ital@0;1&family=Bitter:ital,wght@0,100..900;1,100..900&family=Caveat:wght@400..700&family=Coming+Soon&family=EB+Garamond:ital,wght@0,400..800;1,400..800&family=Indie+Flower&family=Literata:ital,opsz,wght@0,7..72,200..900;1,7..72,200..900&family=Merriweather:ital,wght@0,300..900;1,300..900&family=Merriweather+Sans:ital,wght@0,300..800;1,300..800&family=Nunito+Sans:ital,opsz,wght@0,6..12,200..1000;1,6..12,200..1000&family=Patrick+Hand&display=swap"
+                href="https://fonts.googleapis.com/css2?family=Baskervville:ital@0;1&family=Bitter:ital,wght@0,100..900;1,100..900&family=Caveat:wght@400..700&family=Coming+Soon&family=EB+Garamond:ital,wght@0,400..800;1,400..800&family=Fira+Mono:wght@400;500;700&family=Indie+Flower&family=Literata:ital,opsz,wght@0,7..72,200..900;1,7..72,200..900&family=Merriweather:ital,wght@0,300..900;1,300..900&family=Merriweather+Sans:ital,wght@0,300..800;1,300..800&family=Noto+Serif:ital,wght@0,100..900;1,100..900&family=Nunito+Sans:ital,opsz,wght@0,6..12,200..1000;1,6..12,200..1000&family=Patrick+Hand&family=Prompt:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Ubuntu:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400;1,500;1,700&family=Ysabeau+Office:ital,wght@0,1..1000;1,1..1000&display=swap"
                 rel="stylesheet"
             />
         </noscript>
@@ -402,6 +402,28 @@
                 font-style: italic;
             }
 
+            .reading-time-container {
+                font-size: 0.85rem;
+                color: var(--text-color);
+                opacity: 0.7;
+                margin-bottom: 2em;
+                font-family: "Open Sans", sans-serif;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                padding: 0 20px;
+            }
+
+            .reading-time-icon {
+                width: 16px;
+                height: 16px;
+                fill: none;
+                stroke: currentColor;
+                stroke-width: 2;
+                stroke-linecap: round;
+                stroke-linejoin: round;
+            }
+
             @keyframes slideInFade {
                 from {
                     opacity: 0;
@@ -669,21 +691,6 @@
                         value="0"
                     />
                 </div>
-
-                <div class="setting-item">
-                    <div class="setting-header">
-                        <label>Paragraph Style</label>
-                    </div>
-                    <div class="select-wrapper">
-                        <select id="input-para-style">
-                            <option value="block">Block (Web Default)</option>
-                            <option value="indent">
-                                Indented (Classic Book)
-                            </option>
-                        </select>
-                    </div>
-                </div>
-
                 <div class="setting-item">
                     <div class="setting-header">
                         <label for="input-font">Typeface</label>
@@ -698,6 +705,15 @@
                             </option>
                             <option value="'Nunito Sans', sans-serif">
                                 Nunito Sans (Sans)
+                            </option>
+                            <option value="'Prompt', sans-serif">
+                                Prompt (Sans)
+                            </option>
+                            <option value="'Ubuntu', sans-serif">
+                                Ubuntu (Sans)
+                            </option>
+                            <option value="'Ysabeau Office', sans-serif">
+                                Ysabeau Office (Sans)
                             </option>
 
                             <option value="'Baskervville', serif">
@@ -729,7 +745,37 @@
                         </select>
                     </div>
                 </div>
-
+                <div class="setting-row">
+                    <div class="setting-item">
+                        <div class="setting-header">
+                            <label>Paragraph Style</label>
+                        </div>
+                        <div class="segmented-control" id="para-style-btns">
+                            <button
+                                class="segment-btn active"
+                                data-style="block"
+                                aria-label="Block Style"
+                            >
+                                <svg viewBox="0 0 24 24" fill="currentColor">
+                                    <path
+                                        d="M4 6h16v2H4zm0 5h16v2H4zm0 5h16v2H4z"
+                                    />
+                                </svg>
+                            </button>
+                            <button
+                                class="segment-btn"
+                                data-style="indent"
+                                aria-label="Indented Style"
+                            >
+                                <svg viewBox="0 0 24 24" fill="currentColor">
+                                    <path
+                                        d="M10 6h10v2H10zm-6 5h16v2H4zm0 5h16v2H4z"
+                                    />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
                 <div class="setting-item">
                     <div class="setting-header">
                         <label>Theme</label>
@@ -924,6 +970,97 @@
                             <line x1="6" y1="6" x2="18" y2="18"></line>
                         </svg>
                     </button>
+                </div>
+                <div class="overview-controls">
+                    <div class="search-wrapper">
+                        <svg
+                            class="search-icon"
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="16"
+                            height="16"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        >
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        </svg>
+                        <input
+                            type="text"
+                            id="overviewSearch"
+                            placeholder="Search text or notes..."
+                        />
+                    </div>
+
+                    <div class="sort-group">
+                        <button
+                            class="icon-btn sort-btn active"
+                            data-value="chapter"
+                            title="Group by Chapter"
+                        >
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="16"
+                                height="16"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                            >
+                                <path
+                                    d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"
+                                ></path>
+                                <path
+                                    d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"
+                                ></path>
+                            </svg>
+                        </button>
+                        <button
+                            class="icon-btn sort-btn"
+                            data-value="newest"
+                            title="Newest First"
+                        >
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="16"
+                                height="16"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                            >
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <polyline points="19 12 12 19 5 12"></polyline>
+                            </svg>
+                        </button>
+                        <button
+                            class="icon-btn sort-btn"
+                            data-value="oldest"
+                            title="Oldest First"
+                        >
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="16"
+                                height="16"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                            >
+                                <line x1="12" y1="19" x2="12" y2="5"></line>
+                                <polyline points="5 12 12 5 19 12"></polyline>
+                            </svg>
+                        </button>
+                    </div>
                 </div>
                 <div class="overview-content" id="overviewContent"></div>
             </div>
